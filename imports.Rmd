@@ -1,0 +1,883 @@
+---
+title: "exports"
+author: "Herna Osorio"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+library(tidyverse)
+library(tidymodels)
+library(lubridate)
+library(kableExtra)
+library(plotly)
+library(scales)
+library(prophet)
+library(modeltime)
+library(timetk)
+library(tseries)
+library(ggrepel)
+library(jsonlite)
+library(forcats)
+library(purrr)
+library(readr)
+Sys.setenv(OPENAI_API_KEY = "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")
+```
+
+```{r}
+# set directory path for first 14 files corresponding a 2022 and 2 months of 2023
+dir_path <- "C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/"
+
+# function to import all CSV files in directory
+import_csv_files <- function(directory) {
+  # get a list of all CSV files in the directory
+  csv_files <- list.files(directory, pattern = "\\.csv$", full.names = TRUE)
+  
+  # read each CSV file into a data frame and store it in a list
+  df_list <- lapply(csv_files, read_csv)
+  
+  # return the list of data frames
+  return(df_list)
+}
+
+# call the function with the directory path as an argument
+all_data <- import_csv_files(dir_path)
+```
+
+```{r}
+# Check if all columns match
+all_cols_match <- all(sapply(all_data[-1], function(df) identical(names(df), names(all_data[[1]]))))
+
+if (all_cols_match) {
+  # Bind all dataframes into one big dataframe
+  combined_df <- bind_rows(all_data)
+} else {
+  print("Not all columns match in the dataframes.")
+}
+
+```
+
+
+```{r}
+# get column names of first dataframe in the list
+cols <- names(all_data[[1]])
+
+# check if column names match across all dataframes
+diff_indices <- map_lgl(all_data[-1], function(df) !identical(names(df), cols))
+
+# print the indices of the dataframes with different columns
+if(any(diff_indices)){
+  print(paste0("Data frames with different columns: ", which(diff_indices)))
+} else {
+  # bind all dataframes into one big dataframe
+  all_data_merged <- bind_rows(all_data)
+}
+
+```
+
+
+```{r}
+#generate new list items with data frames to correct
+new_all_data_list <- list(all_data[[3]], all_data[[5]], all_data[[7]])
+#creat a vector with nested lists to extract
+item_list_extract <- c(3,5,7)
+#extract the nested lists from original vector 
+all_data <- all_data[-item_list_extract]
+
+# define a function to add the missing columns to each data frame
+add_missing_cols <- function(df) {
+  if (!"NIT" %in% colnames(df)) {
+    df$NIT <- NA
+  }
+  if (!"DIGV" %in% colnames(df)) {
+    df$DIGV <- NA
+  }
+  if (!"RZIMPO" %in% colnames(df)) {
+    df$RZIMP <- NA
+  }
+  return(df)
+}
+
+# apply the function to each data frame in the new list object
+new_all_data_list <- lapply(new_all_data_list, add_missing_cols) 
+```
+
+```{r}
+#bind Rows of the list object to make one dataframe.
+imports <- c(all_data, new_all_data_list) %>% 
+  bind_rows()
+```
+
+```{r}
+#drop these object lists to free up memory
+rm(all_data, new_all_data_list)
+```
+
+Import 2021 data
+```{r}
+# set directory path for ramining files to year 2022
+dir_path_exthd_2021 <- "D:/DataScience/imports_colombia/2021"
+
+# function to import all CSV files in directory
+import_csv_files_2021 <- function(directory_2021) {
+  # get a list of all CSV files in the directory
+  csv_files_2021 <- list.files(directory, pattern = "\\.csv$", full.names = TRUE)
+  
+  # read each CSV file into a data frame and store it in a list
+  df_list_2021 <- lapply(csv_files_2021, read_csv)
+  
+  # return the list of data frames
+  return(df_list_2021)
+}
+
+# call the function with the directory path as an argument
+all_data_2021 <- import_csv_files(dir_path_exthd_2021)
+```
+
+Check for column name consistency in 2021
+```{r}
+# Check if all columns match
+all_cols_match <- all(sapply(all_data_2021[-1], function(df) identical(names(df), names(all_data_2021[[1]]))))
+
+if (all_cols_match) {
+  # Bind all dataframes into one big dataframe
+  combined_2021 <- bind_rows(all_data_2021)
+} else {
+  print("Not all columns match in the dataframes.")
+}
+
+```
+
+```{r}
+#remove list objects no longer being utilized
+rm(all_data_2021)
+```
+
+Import 2020 data
+```{r}
+# set directory path for ramining files to year 2022
+dir_path_exthd_2020 <- "D:/DataScience/imports_colombia/2020"
+
+# function to import all CSV files in directory
+import_csv_files_2020 <- function(directory_2020) {
+  # get a list of all CSV files in the directory
+  csv_files_2020 <- list.files(directory, pattern = "\\.csv$", full.names = TRUE)
+  
+  # read each CSV file into a data frame and store it in a list
+  df_list_2020 <- lapply(csv_files_2020, read_csv)
+  
+  # return the list of data frames
+  return(df_list_2020)
+}
+
+# call the function with the directory path as an argument
+all_data_2020 <- import_csv_files(dir_path_exthd_2020)
+```
+
+Check for column name consistency in 2020
+```{r}
+# Check if all columns match
+all_cols_match <- all(sapply(all_data_2020[-1], function(df) identical(names(df), names(all_data_2020[[1]]))))
+
+if (all_cols_match) {
+  # Bind all dataframes into one big dataframe
+  combined_2020 <- bind_rows(all_data_2020)
+} else {
+  print("Not all columns match in the dataframes.")
+}
+
+```
+
+```{r}
+#remove list objects no longer being utilized
+rm(all_data_2020)
+```
+
+Import 2019 data
+```{r}
+#All files had to be imported individually as the automated process was generating issues.
+ene_2019 <- read.csv2("D:/DataScience/imports_colombia/2019/Enero-2019.csv")
+feb_2019 <- read.csv2("D:/DataScience/imports_colombia/2019/Febrero-2019.csv")
+mar_2019 <- read.csv2("D:/DataScience/imports_colombia/2019/Marzo-2019.csv")
+abr_2019 <- read.csv2("D:/DataScience/imports_colombia/2019/Abril-2019.csv")
+may_2019 <- read.csv2("D:/DataScience/imports_colombia/2019/Mayo-2019.csv")
+jun_2019 <- read.csv2("D:/DataScience/imports_colombia/2019/Junio-2019.csv")
+jul_2019 <- read.csv2("D:/DataScience/imports_colombia/2019/Julio-2019.csv")
+ago_2019 <- read.csv2("D:/DataScience/imports_colombia/2019/Agosto-2019.csv")
+sep_2019 <- read.csv2("D:/DataScience/imports_colombia/2019/Septiembre-2019.csv")
+oct_2019 <- read.csv2("D:/DataScience/imports_colombia/2019/Octubre-2019.csv")
+nov_2019 <- read.csv2("D:/DataScience/imports_colombia/2019/Noviembre-2019.csv")
+dec_2019 <- read.csv2("D:/DataScience/imports_colombia/2019/Diciembre-2019.csv")
+```
+
+```{r}
+imp_2019_list <- list(ene_2019, feb_2019, mar_2019, abr_2019, may_2019, jun_2019, jul_2019, ago_2019, sep_2019, oct_2019, nov_2019, dec_2019)
+```
+
+Check for column name consistency in 2019
+```{r}
+# convert all columns to character type
+imp_2019_list <- lapply(imp_2019_list, function(df) {
+  mutate_all(df, as.character)
+})
+
+# check if all columns match
+all_cols_match <- all(sapply(imp_2019_list[-1], function(df) identical(names(df), names(imp_2019_list[[1]]))))
+
+# bind all data frames into one
+if (all_cols_match) {
+  combined_2019 <- bind_rows(imp_2019_list)
+} else {
+  print("Not all columns match in the data frames.")
+}
+
+```
+
+
+```{r}
+rm(imp_2019_list, ene_2019, feb_2019, mar_2019, abr_2019, may_2019, jun_2019, jul_2019, ago_2019, sep_2019, oct_2019, nov_2019, dec_2019)
+```
+
+
+```{r}
+#All files had to be imported individually as the automated process was generating issues.
+ene_2018 <- read.csv("D:/DataScience/imports_colombia/2018/Enero-2018.csv")
+feb_2018 <- read.csv("D:/DataScience/imports_colombia/2018/Febrero-2018.csv")
+mar_2018 <- read.csv("D:/DataScience/imports_colombia/2018/Marzo-2018.csv")
+abr_2018 <- read.csv("D:/DataScience/imports_colombia/2018/Abril-2018.csv")
+may_2018 <- read.csv2("D:/DataScience/imports_colombia/2018/Mayo-2018.csv")
+jun_2018 <- read.csv2("D:/DataScience/imports_colombia/2018/Junio-2018.csv")
+jul_2018 <- read.csv2("D:/DataScience/imports_colombia/2018/Julio-2018.csv")
+ago_2018 <- read.csv2("D:/DataScience/imports_colombia/2018/Agosto-2018.csv")
+sep_2018 <- read.csv2("D:/DataScience/imports_colombia/2018/Septiembre-2018.csv")
+oct_2018 <- read.csv2("D:/DataScience/imports_colombia/2018/Octubre-2018.csv")
+nov_2018 <- read.csv2("D:/DataScience/imports_colombia/2018/Noviembre-2018.csv")
+dec_2018 <- read.csv2("D:/DataScience/imports_colombia/2018/Diciembre-2018.csv")
+```
+
+```{r}
+imp_2018_list <- list(ene_2018, feb_2018, mar_2018, abr_2018, may_2018, jun_2018, jul_2018, ago_2018, sep_2018, oct_2018, nov_2018, dec_2018)
+
+imp_2018_list <- lapply(imp_2018_list, function(df) {
+  df <- df %>% mutate_all(as.character)
+  return(df)
+})
+```
+
+```{r}
+  combined_2018 <- bind_rows(imp_2018_list)
+  
+  combined_2018 <- combined_2018 %>% 
+    select(-"DEREL............", -"DEREL...........")
+```
+
+```{r}
+rm(imp_2018_list, ene_2018, feb_2018, mar_2018, abr_2018, may_2018, jun_2018, jul_2018, ago_2018, sep_2018, oct_2018, nov_2018, dec_2018)
+```
+
+
+```{r}
+#import 2017 data
+ene_2017 <- read.csv2("D:/DataScience/imports_colombia/2017/Enero-2017.csv")
+feb_2017 <- read.csv2("D:/DataScience/imports_colombia/2017/Febrero-2017.csv")
+mar_2017 <- read.csv2("D:/DataScience/imports_colombia/2017/Marzo-2017.csv")
+abr_2017 <- read.csv2("D:/DataScience/imports_colombia/2017/Abril-2017.csv")
+may_2017 <- read.csv2("D:/DataScience/imports_colombia/2017/Mayo-2017.csv")
+jun_2017 <- read.csv2("D:/DataScience/imports_colombia/2017/Junio-2017.csv")
+jul_2017 <- read.csv2("D:/DataScience/imports_colombia/2017/Julio-2017.csv")
+ago_2017 <- read.csv2("D:/DataScience/imports_colombia/2017/Agosto-2017.csv")
+sep_2017 <- read.csv2("D:/DataScience/imports_colombia/2017/Septiembre-2017.csv")
+oct_2017 <- read.csv2("D:/DataScience/imports_colombia/2017/Octubre-2017.csv")
+nov_2017 <- read.csv2("D:/DataScience/imports_colombia/2017/Noviembre-2017.csv")
+dec_2017 <- read.csv2("D:/DataScience/imports_colombia/2017/Diciembre-2017.csv")
+```
+
+
+```{r}
+imp_2017_list <- list(ene_2017, feb_2017, mar_2017, abr_2017, may_2017, jun_2017, jul_2017, ago_2017, sep_2017, oct_2017, nov_2017, dec_2017)
+
+imp_2017_list <- lapply(imp_2017_list, function(df) {
+  df <- df %>% mutate_all(as.character)
+  return(df)
+})
+```
+
+```{r}
+combined_2017 <- bind_rows(imp_2017_list)
+
+combined_2017 <- combined_2017 %>% 
+  select(-"DEREL............")
+
+combined_2017 <- combined_2017 %>% 
+  rename(DEREL = DEREL...........)
+
+combined_2017 <- combined_2017 %>% 
+  mutate(DEREL = gsub(",", "", DEREL))
+
+```
+
+```{r}
+rm(imp_2017_list, ene_2017, feb_2017, mar_2017, abr_2017, may_2017, jun_2017, jul_2017, ago_2017, sep_2017, oct_2017, nov_2017, dec_2017)
+```
+
+
+```{r}
+#import 2016 data
+ene_2016 <- read.csv("D:/DataScience/imports_colombia/2016/Enero-2016.csv")
+feb_2016 <- read.csv("D:/DataScience/imports_colombia/2016/Febrero-2016.csv")
+mar_2016 <- read.csv("D:/DataScience/imports_colombia/2016/Marzo-2016.csv")
+abr_2016 <- read.csv("D:/DataScience/imports_colombia/2016/Abril-2016.csv")
+may_2016 <- read.csv("D:/DataScience/imports_colombia/2016/Mayo-2016.csv")
+jun_2016 <- read.csv("D:/DataScience/imports_colombia/2016/Junio-2016.csv")
+jul_2016 <- read.csv("D:/DataScience/imports_colombia/2016/Julio-2016.csv")
+ago_2016 <- read.csv("D:/DataScience/imports_colombia/2016/Agosto-2016.csv")
+sep_2016 <- read.csv("D:/DataScience/imports_colombia/2016/Septiembre-2016.csv")
+oct_2016 <- read.csv("D:/DataScience/imports_colombia/2016/Octubre-2016.csv")
+nov_2016 <- read.csv("D:/DataScience/imports_colombia/2016/Noviembre-2016.csv")
+dec_2016 <- read.csv("D:/DataScience/imports_colombia/2016/Diciembre-2016.csv")
+```
+
+
+```{r}
+imp_2016_list <- list(ene_2016, feb_2016, mar_2016, abr_2016, may_2016, jun_2016, jul_2016, ago_2016, sep_2016, oct_2016, nov_2016, dec_2016)
+
+imp_2016_list <- lapply(imp_2016_list, function(df) {
+  df <- df %>% mutate_all(as.character)
+  return(df)
+})
+
+combined_2016 <- bind_rows(imp_2016_list)
+```
+
+```{r}
+rm(imp_2016_list, ene_2016, feb_2016, mar_2016, abr_2016, may_2016, jun_2016, jul_2016, ago_2016, sep_2016, oct_2016, nov_2016, dec_2016)
+```
+
+```{r}
+#import 2015 data
+ene_2015 <- read.csv("D:/DataScience/imports_colombia/2015/Enero-2015.csv")
+feb_2015 <- read.csv("D:/DataScience/imports_colombia/2015/Febrero-2015.csv")
+mar_2015 <- read.csv("D:/DataScience/imports_colombia/2015/Marzo-2015.csv")
+abr_2015 <- read.csv("D:/DataScience/imports_colombia/2015/Abril-2015.csv")
+may_2015 <- read.csv("D:/DataScience/imports_colombia/2015/Mayo-2015.csv")
+jun_2015 <- read.csv("D:/DataScience/imports_colombia/2015/Junio-2015.csv")
+jul_2015 <- read.csv("D:/DataScience/imports_colombia/2015/Julio-2015.csv")
+ago_2015 <- read.csv("D:/DataScience/imports_colombia/2015/Agosto-2015.csv")
+sep_2015 <- read.csv("D:/DataScience/imports_colombia/2015/Septiembre-2015.csv")
+oct_2015 <- read.csv("D:/DataScience/imports_colombia/2015/Octubre-2015.csv")
+nov_2015 <- read.csv("D:/DataScience/imports_colombia/2015/Noviembre-2015.csv")
+dec_2015 <- read.csv("D:/DataScience/imports_colombia/2015/Diciembre-2015.csv")
+```
+
+
+```{r}
+imp_2015_list <- list(ene_2015, feb_2015, mar_2015, abr_2015, may_2015, jun_2015, jul_2015, ago_2015, sep_2015, oct_2015, nov_2015, dec_2015)
+
+imp_2015_list <- lapply(imp_2015_list, function(df) {
+  df <- df %>% mutate_all(as.character)
+  return(df)
+})
+
+combined_2015 <- bind_rows(imp_2015_list)
+```
+
+```{r}
+rm(imp_2015_list, ene_2015, feb_2015, mar_2015, abr_2015, may_2015, jun_2015, jul_2015, ago_2015, sep_2015, oct_2015, nov_2015, dec_2015)
+```
+
+```{r}
+#import 2014 data
+ene_2014 <- read.csv("D:/DataScience/imports_colombia/2014/Enero-2014.csv")
+feb_2014 <- read.csv("D:/DataScience/imports_colombia/2014/Febrero-2014.csv")
+mar_2014 <- read.csv("D:/DataScience/imports_colombia/2014/Marzo-2014.csv")
+abr_2014 <- read.csv("D:/DataScience/imports_colombia/2014/Abril-2014.csv")
+may_2014 <- read.csv("D:/DataScience/imports_colombia/2014/Mayo-2014.csv")
+jun_2014 <- read.csv("D:/DataScience/imports_colombia/2014/Junio-2014.csv")
+jul_2014 <- read.csv("D:/DataScience/imports_colombia/2014/Julio-2014.csv")
+ago_2014 <- read.csv("D:/DataScience/imports_colombia/2014/Agosto-2014.csv")
+sep_2014 <- read.csv("D:/DataScience/imports_colombia/2014/Septiembre-2014.csv")
+oct_2014 <- read.csv("D:/DataScience/imports_colombia/2014/Octubre-2014.csv")
+nov_2014 <- read.csv("D:/DataScience/imports_colombia/2014/Noviembre-2014.csv")
+dec_2014 <- read.csv("D:/DataScience/imports_colombia/2014/Diciembre-2014.csv")
+```
+
+```{r}
+imp_2014_list <- list(ene_2014, feb_2014, mar_2014, abr_2014, may_2014, jun_2014, jul_2014, ago_2014, sep_2014, oct_2014, nov_2014, dec_2014)
+
+imp_2014_list <- lapply(imp_2014_list, function(df) {
+  df <- df %>% mutate_all(as.character)
+  return(df)
+})
+
+combined_2014 <- bind_rows(imp_2014_list)
+```
+
+```{r}
+rm(imp_2014_list, ene_2014, feb_2014, mar_2014, abr_2014, may_2014, jun_2014, jul_2014, ago_2014, sep_2014, oct_2014, nov_2014, dec_2014)
+```
+
+```{r}
+#import 2013 data
+ene_2013 <- read.csv("D:/DataScience/imports_colombia/2013/Enero-2013.csv")
+feb_2013 <- read.csv("D:/DataScience/imports_colombia/2013/Febrero-2013.csv")
+mar_2013 <- read.csv("D:/DataScience/imports_colombia/2013/Marzo-2013.csv")
+abr_2013 <- read.csv("D:/DataScience/imports_colombia/2013/Abril-2013.csv")
+may_2013 <- read.csv("D:/DataScience/imports_colombia/2013/Mayo-2013.csv")
+jun_2013 <- read.csv("D:/DataScience/imports_colombia/2013/Junio-2013.csv")
+jul_2013 <- read.csv("D:/DataScience/imports_colombia/2013/Julio-2013.csv")
+ago_2013 <- read.csv("D:/DataScience/imports_colombia/2013/Agosto-2013.csv")
+sep_2013 <- read.csv("D:/DataScience/imports_colombia/2013/Septiembre-2013.csv")
+oct_2013 <- read.csv("D:/DataScience/imports_colombia/2013/Octubre-2013.csv")
+nov_2013 <- read.csv("D:/DataScience/imports_colombia/2013/Noviembre-2013.csv")
+dec_2013 <- read.csv("D:/DataScience/imports_colombia/2013/Diciembre-2013.csv")
+```
+
+```{r}
+imp_2013_list <- list(ene_2013, feb_2013, mar_2013, abr_2013, may_2013, jun_2013, jul_2013, ago_2013, sep_2013, oct_2013, nov_2013, dec_2013)
+
+imp_2013_list <- lapply(imp_2013_list, function(df) {
+  df <- df %>% mutate_all(as.character)
+  return(df)
+})
+
+combined_2013 <- bind_rows(imp_2013_list)
+```
+
+```{r}
+rm(imp_2013_list, ene_2013, feb_2013, mar_2013, abr_2013, may_2013, jun_2013, jul_2013, ago_2013, sep_2013, oct_2013, nov_2013, dec_2013)
+```
+
+```{r}
+#import 2012 data
+ene_2012 <- read.csv("D:/DataScience/imports_colombia/2012/Enero-2012.csv")
+feb_2012 <- read.csv("D:/DataScience/imports_colombia/2012/Febrero-2012.csv")
+mar_2012 <- read.csv("D:/DataScience/imports_colombia/2012/Marzo-2012.csv")
+abr_2012 <- read.csv("D:/DataScience/imports_colombia/2012/Abril-2012.csv")
+may_2012 <- read.csv("D:/DataScience/imports_colombia/2012/Mayo-2012.csv")
+jun_2012 <- read.csv("D:/DataScience/imports_colombia/2012/Junio-2012.csv")
+jul_2012 <- read.csv("D:/DataScience/imports_colombia/2012/Julio-2012.csv")
+ago_2012 <- read.csv("D:/DataScience/imports_colombia/2012/Agosto-2012.csv")
+sep_2012 <- read.csv("D:/DataScience/imports_colombia/2012/Septiembre-2012.csv")
+oct_2012 <- read.csv("D:/DataScience/imports_colombia/2012/Octubre-2012.csv")
+nov_2012 <- read.csv("D:/DataScience/imports_colombia/2012/Noviembre-2012.csv")
+dec_2012 <- read.csv("D:/DataScience/imports_colombia/2012/Diciembre-2012.csv")
+```
+
+```{r}
+imp_2012_list <- list(ene_2012, feb_2012, mar_2012, abr_2012, may_2012, jun_2012, jul_2012, ago_2012, sep_2012, oct_2012, nov_2012, dec_2012)
+
+imp_2012_list <- lapply(imp_2012_list, function(df) {
+  df <- df %>% mutate_all(as.character)
+  return(df)
+})
+
+combined_2012 <- bind_rows(imp_2012_list)
+```
+
+```{r}
+rm(imp_2012_list, ene_2012, feb_2012, mar_2012, abr_2012, may_2012, jun_2012, jul_2012, ago_2012, sep_2012, oct_2012, nov_2012, dec_2012)
+```
+
+
+```{r}
+imports_full <- bind_rows(imports, combined_2021, combined_2020, combined_2019, combined_2018, combined_2017, combined_2016, combined_2015, combined_2014, combined_2013, combined_2012)
+```
+
+```{r}
+rm(imports, combined_2021, combined_2020, combined_2019, combined_2018, combined_2017, combined_2016, combined_2015, combined_2014, combined_2013, combined_2012)
+```
+
+
+```{r}
+#fix de FECH column to make it readable for R
+imports$FECH <- as.Date(paste0(imports$FECH, "01"), format = "%y%m%d")
+
+View(head(imports, n=50))
+```
+
+```{r}
+colnames(imports) <- c("FECH"="Fecha_de_proceso","ADUA"="Codigo_de_la_aduana", "PAISGEN"="Pais_origen", "PAISPRO"="Pais_procedencia", "PAISCOM"="Pais_compra", "DEPTODES"="Departamento_destino", "VIATRANS"="Codigo_vi_de_transporte", "BANDERA"="Bandera", "REGIMEN"="Codigo_regimen", "ACUERDO"="Codigo_acuerdo", "PBK"="Peso_bruto_en_kilos", "PNK"="Peso_neto_en_kilos", "CANU"="Cantidad_de_unidades", "CODA"="Codigo_de_unidad", "NABAN"="Posicion_arancelaria", "VAFODO"="Valor_FOB_dolares_de_la_mercancia", "FLETE"="Fletes", "VACID"="Valor_CIF_dolares_de_la_mercancia", "VACIP"="Valor_CIF_pesos_de_la_mercancia", "IMP1"="Impuesto_a_las_ventas", "OTDER"="Otros_derechos", "CLASE"="Clase_de_importador", "CUIDAIMP"="Ciudad_del_importador", "CUIDAEXP"="Ciudad_del_exportador", "ACTECON"="Actividad_economica", "CODADAD"="Codigo_administracion_de_aduana", "VADUA"="Valor_aduana", "VRAJUS"="Valor_ajuste", "BASEIVA"="Base_IVA", "OTROSP"="Porcentaje_otros", "OTROSBASE"="Base_otros", "TOTALIVAYO"="Total_IVA_y_otros_gastos", "SEGUROS"="Seguros", "OTROSG"="Otros_gastos", "LUIN"="Lugar_de_ingreso", "CODLUIN"="Codigo_lugar_de_ingreso", "DEPIM"="Departamento_del_importador", "COPAEX"="Codigo_pais_del_exportador", "TIPOIM"="Tipo_de_importacion", "PORARA"="Porcentaje_de_arancel", "NIT"="Numero_de_identificación_Tributaria", "DIGV"="Digito_de_Verificación", "RZIMPO"="Razon_social_del_importador", "DEREL"="Derechos_arancelarios", "RZIMP"="RZIMP")
+
+View(tail(imports, n=50))
+
+```
+
+```{r}
+imports <- imports %>% 
+        mutate(across(.cols = c("Codigo_de_la_aduana", "Pais_origen", "Pais_procedencia", "Pais_compra", "Departamento_destino", "Codigo_vi_de_transporte", "Bandera", "Codigo_regimen", "Codigo_acuerdo", "Codigo_de_unidad", "Posicion_arancelaria", "Clase_de_importador", "Ciudad_del_importador", "Ciudad_del_exportador", "Actividad_economica", "Codigo_administracion_de_aduana", "Lugar_de_ingreso", "Codigo_lugar_de_ingreso", "Departamento_del_importador", "Codigo_pais_del_exportador", "Tipo_de_importacion", "Numero_de_identificación_Tributaria", "Digito_de_Verificación"), .fns = factor)
+)
+```
+
+```{r}
+txt = "C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/data_dictionary/Codigo_de_la_aduana.json"
+
+cod_aduana <- fromJSON(
+  txt,
+  simplifyVector = TRUE,
+  simplifyDataFrame = TRUE,
+  simplifyMatrix = TRUE
+)
+
+cod_aduana_key <- cod_aduana[25]
+cod_aduana_df <- (cod_aduana_key[1]) %>% 
+  as.data.frame() %>% 
+  select("var_catgry.value", "var_catgry.labl")
+  
+View(cod_aduana_df)
+```
+
+```{r}
+imports <- imports %>% 
+  left_join(cod_aduana_df, by = c("Codigo_de_la_aduana"= "var_catgry.value"))
+
+imports <- relocate(imports, var_catgry.labl, .before = Pais_origen)
+imports <- rename(imports, Aduana = var_catgry.labl) 
+imports$Aduana <- as.factor(imports$Aduana)
+View(head(imports, n=50))
+
+```
+
+
+```{r}
+txt_po = "C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/data_dictionary/po.json"
+
+po <- fromJSON(
+  txt_po,
+  simplifyVector = TRUE,
+  simplifyDataFrame = TRUE,
+  simplifyMatrix = TRUE
+)
+
+po_key <- po[25]
+po_key_df <- (po_key[1]) %>% 
+  as.data.frame() %>% 
+  select("var_catgry.value", "var_catgry.labl")
+  
+View(po_key_df)
+
+```
+
+```{r}
+imports <- imports %>% 
+  left_join(po_key_df, by = c("Pais_origen"= "var_catgry.value"))
+
+imports <- relocate(imports, var_catgry.labl, .before = Pais_procedencia)
+imports <- rename(imports, Pais_de_origen = var_catgry.labl)
+imports$Pais_de_origen <- as.factor(imports$Pais_de_origen)
+View(head(imports, n=50))
+
+```
+
+```{r}
+txt_pp = "C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/data_dictionary/pp.json"
+
+pp <- fromJSON(
+  txt_pp,
+  simplifyVector = TRUE,
+  simplifyDataFrame = TRUE,
+  simplifyMatrix = TRUE
+)
+
+pp_key <- po[25]
+pp_key_df <- (pp_key[1]) %>% 
+  as.data.frame() %>% 
+  select("var_catgry.value", "var_catgry.labl")
+  
+View(pp_key_df)
+```
+
+
+```{r}
+imports <- imports %>% 
+  left_join(pp_key_df, by = c("Pais_procedencia"= "var_catgry.value"))
+
+imports <- relocate(imports, var_catgry.labl, .before = Pais_compra) 
+imports <- rename(imports, Pais_de_procedencia = var_catgry.labl)
+imports$Pais_de_procedencia <- as.factor(imports$Pais_de_procedencia)
+
+View(head(imports, n=50)) # check where the column is suposed to be.
+
+
+```
+
+```{r}
+txt_p_compra = "C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/data_dictionary/p_compra.json"
+
+p_compra <- fromJSON(
+  txt_p_compra,
+  simplifyVector = TRUE,
+  simplifyDataFrame = TRUE,
+  simplifyMatrix = TRUE
+)
+
+p_compra_key <- p_compra[25]
+p_compra_key_df <- (p_compra_key[1]) %>% 
+  as.data.frame() %>% 
+  select("var_catgry.value", "var_catgry.labl")
+  
+View(p_compra_key_df)
+```
+
+```{r}
+imports <- imports %>% 
+  left_join(p_compra_key_df, by = c("Pais_compra"= "var_catgry.value"))
+
+imports <- relocate(imports, var_catgry.labl, .before = Departamento_destino) 
+imports <- rename(imports, Pais_de_compra = var_catgry.labl)
+imports$Pais_de_procedencia <- as.factor(imports$Pais_de_procedencia)
+
+View(head(imports, n=50)) # check where the column is suposed to be.
+
+```
+
+```{r}
+txt_dep_des = "C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/data_dictionary/dep_des.json"
+
+dep_des <- fromJSON(
+  txt_dep_des,
+  simplifyVector = TRUE,
+  simplifyDataFrame = TRUE,
+  simplifyMatrix = TRUE
+)
+
+dep_des_key <- dep_des[25]
+dep_des_key_df <- (dep_des_key[1]) %>% 
+  as.data.frame() %>% 
+  select("var_catgry.value", "var_catgry.labl")
+  
+View(dep_des_key_df)
+```
+
+```{r}
+imports <- imports %>% 
+  left_join(dep_des_key_df, by = c("Departamento_destino"= "var_catgry.value"))
+
+imports <- relocate(imports, var_catgry.labl, .before = Codigo_vi_de_transporte) 
+imports <- rename(imports, departametno_destino_final = var_catgry.labl)
+imports$departametno_destino_final <- as.factor(imports$departametno_destino_final)
+
+View(head(imports, n=50)) # check where the column is supposed to be.
+
+```
+
+```{r}
+txt_cod_via_transporte = "C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/data_dictionary/cod_via_transporte.json"
+
+cod_via_transporte <- fromJSON(
+  txt_cod_via_transporte,
+  simplifyVector = TRUE,
+  simplifyDataFrame = TRUE,
+  simplifyMatrix = TRUE
+)
+
+cod_via_transporte_key <- cod_via_transporte[25]
+cod_via_transporte_df <- (cod_via_transporte_key[1]) %>% 
+  as.data.frame() %>% 
+  select("var_catgry.value", "var_catgry.labl")
+  
+View(cod_via_transporte_df)
+
+```
+
+```{r}
+imports <- imports %>% 
+  left_join(cod_via_transporte_df, by = c("Codigo_vi_de_transporte"= "var_catgry.value"))
+
+imports <- relocate(imports, var_catgry.labl, .before = Bandera) 
+imports <- rename(imports, metodo_de_transporte = var_catgry.labl)
+imports$metodo_de_transporte <- as.factor(imports$metodo_de_transporte)
+
+View(head(imports, n=50)) # check where the column is supposed to be.
+
+```
+
+```{r}
+acuerdo_df <- read_csv("C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/data_dictionary/acuerdo.csv")
+
+acuerdo_df$.value <- as.factor(acuerdo_df$.value)
+
+imports <- imports %>% 
+  left_join(acuerdo_df, by = c("Codigo_acuerdo"= ".value"))
+
+imports <- relocate(imports, .labl, .before = Peso_bruto_en_kilos)
+imports <- rename(imports, codigo_de_acuerdo = .labl)
+imports$codigo_de_acuerdo <- as.factor(imports$codigo_de_acuerdo)
+
+View(head(imports, n=50)) # check where the column is supposed to be.
+
+
+```
+
+```{r}
+clase_importador_df <- read_csv("C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/data_dictionary/clase_importador.csv")
+
+clase_importador_df$var_catgry.value <- as.factor(clase_importador_df$var_catgry.value)
+
+imports <- imports %>% 
+  left_join(clase_importador_df, by = c("Clase_de_importador"= "var_catgry.value"))
+
+imports <- relocate(imports, var_catgry.labl, .before = Ciudad_del_importador) 
+imports <- rename(imports, calse_de_import= var_catgry.labl)
+imports$calse_de_import <- as.factor(imports$calse_de_import)
+
+View(head(imports, n=50)) # check where the column is supposed to be.
+
+
+```
+
+```{r}
+txt_Codigo_administracion_de_aduana = "C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/data_dictionary/Codigo_administracion_de_aduana.json"
+
+Codigo_administracion_de_aduana <- fromJSON(
+  txt_Codigo_administracion_de_aduana,
+  simplifyVector = TRUE,
+  simplifyDataFrame = TRUE,
+  simplifyMatrix = TRUE
+)
+
+Codigo_administracion_de_aduana_key <- Codigo_administracion_de_aduana[25]
+Codigo_administracion_de_aduana_df <- (Codigo_administracion_de_aduana_key[1]) %>% 
+  as.data.frame() %>% 
+  select("var_catgry.value", "var_catgry.labl")
+  
+View(Codigo_administracion_de_aduana_df)
+
+```
+
+```{r}
+imports <- imports %>% 
+  left_join(Codigo_administracion_de_aduana_df, by = c("Codigo_administracion_de_aduana"= "var_catgry.value"))
+
+imports <- relocate(imports, var_catgry.labl, .before = Valor_aduana) 
+imports <- rename(imports, cod_admon_aduana = var_catgry.labl)
+imports$cod_admon_aduana <- as.factor(imports$cod_admon_aduana)
+
+View(head(imports, n=50)) # check where the column is supposed to be.
+
+```
+
+```{r}
+txt_Departamento_del_importador = "C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/data_dictionary/Departamento_del_importador.json"
+
+Departamento_del_importador <- fromJSON(
+  txt_Departamento_del_importador,
+  simplifyVector = TRUE,
+  simplifyDataFrame = TRUE,
+  simplifyMatrix = TRUE
+)
+
+Departamento_del_importador_key <- Departamento_del_importador[25]
+Departamento_del_importador_df <- (Departamento_del_importador_key[1]) %>% 
+  as.data.frame() %>% 
+  select("var_catgry.value", "var_catgry.labl")
+  
+View(Departamento_del_importador_df)
+
+```
+
+```{r}
+imports <- imports %>% 
+  left_join(Departamento_del_importador_df, by = c("Departamento_del_importador" = "var_catgry.value"))
+
+imports <- relocate(imports, var_catgry.labl, .before = Codigo_pais_del_exportador) 
+imports <- rename(imports, Dep_del_importador = var_catgry.labl)
+imports$Dep_del_importador <- as.factor(imports$Dep_del_importador)
+
+View(head(imports, n=50)) # check where the column is supposed to be.
+
+```
+
+```{r}
+txt_Codigo_pais_del_exportador = "C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/data_dictionary/Codigo_pais_del_exportador.json"
+
+Codigo_pais_del_exportador <- fromJSON(
+  txt_Codigo_pais_del_exportador,
+  simplifyVector = TRUE,
+  simplifyDataFrame = TRUE,
+  simplifyMatrix = TRUE
+)
+
+Codigo_pais_del_exportador_key <- Codigo_pais_del_exportador$var_qstn_qstnlit
+
+# Split the string into lines
+lines <- str_split(Codigo_pais_del_exportador_key, "\n")[[1]]
+
+# Remove empty lines
+lines <- lines[lines != ""]
+
+# Split each line into columns
+Codigo_pais_del_exportador <- tibble(
+  code = str_extract(lines, "^\\d+"),
+  country = str_extract(lines, "[[:alpha:]].*$")
+)
+
+# Remove leading and trailing white space from country column
+Codigo_pais_del_exportador$country <- str_trim(Codigo_pais_del_exportador$country)
+
+```
+
+```{r}
+imports <- imports %>% 
+  left_join(Codigo_pais_del_exportador, by = c("Codigo_pais_del_exportador" = "code"))
+
+imports <- relocate(imports, country, .before = Tipo_de_importacion)
+
+imports <- rename(imports, cod_Pais_exportador = country)
+
+imports$cod_Pais_exportador <- as.factor(imports$cod_Pais_exportador)
+
+View(head(imports, n=50)) # check where the column is supposed to be.
+
+```
+
+
+```{r}
+txt_tipo_importacion.json = "C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/data_dictionary/tipo_importacion.json"
+
+tipo_importacion <- fromJSON(
+  txt_tipo_importacion.json,
+  simplifyVector = TRUE,
+  simplifyDataFrame = TRUE,
+  simplifyMatrix = TRUE
+)
+
+
+tipo_importacion <- tipo_importacion$var_qstn_qstnlit
+
+# Split the string into lines
+lines <- str_split(tipo_importacion, "\n")[[1]]
+
+# Remove empty lines
+lines <- lines[lines != ""]
+
+# Split each line into columns
+tipo_importacion <- tibble(
+  code = str_extract(lines, "^\\d+"),
+  country = str_extract(lines, "[[:alpha:]].*$")
+)
+
+# Remove leading and trailing white space from country column
+tipo_importacion$country <- str_trim(tipo_importacion$country)
+```
+
+```{r}
+imports <- imports %>% 
+  left_join(tipo_importacion, by = c("Tipo_de_importacion" = "code"))
+
+imports <- relocate(imports, country, .before = Tipo_de_importacion)
+
+imports <- rename(imports, tipo_de_imp = country)
+
+imports$tipo_de_imp <- as.factor(imports$tipo_de_imp)
+
+View(head(imports, n=505)) # check where the column is supposed to be.
+```
+
+```{r}
+jcp <- imports %>% 
+  dplyr::filter(Posicion_arancelaria==2009490000)
+
+View(head(jcp, n=500))
+```
+
