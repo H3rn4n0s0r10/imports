@@ -13,13 +13,17 @@ library(sf)
 imports <- read.csv("C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/5year_imports2.csv", nrows = 1000000)
 depar <- st_read("C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/MGN2022_DPTO_POLITICO/MGN_DPTO_POLITICO.shp")
 
-
+imports$Fecha_de_proceso <- as.Date(imports$Fecha_de_proceso)
+imports <- imports %>% 
+  mutate(across(.cols = c("Codigo_de_la_aduana","Aduana", "Pais_origen", "Pais_de_origen", "Pais_procedencia", "Pais_de_procedencia","Pais_compra", 
+                          "Pais_de_compra", "Departamento_destino", "departametno_destino_final", "Codigo_vi_de_transporte", "metodo_de_transporte", 
+                          "Bandera", "Codigo_regimen", "Codigo_acuerdo", "Codigo_de_unidad", "Posicion_arancelaria", "Clase_de_importador", 
+                          "Ciudad_del_importador", "Ciudad_del_exportador", "Actividad_economica","Codigo_administracion_de_aduana", 
+                          "Lugar_de_ingreso", "Codigo_lugar_de_ingreso","Departamento_del_importador", "Codigo_pais_del_exportador", "Tipo_de_importacion", 
+                          "Numero_de_identificación_Tributaria", "Digito_de_Verificación", "Razon_social_del_importador"), .fns = factor))
 
 imports <- imports %>%
   rename(clase_de_import = calse_de_import)
-
-imports$Razon_social_del_importador <- as.factor(imports$Razon_social_del_importador)
-imports$Posicion_arancelaria <- as.factor(imports$Posicion_arancelaria)
 
 cod_aran_search <- function(cod_aran) {
   data <- imports %>%
@@ -163,8 +167,7 @@ server <- function(input, output) {
   
   output$valuebox_total_mercado <- renderValueBox({
     filtered <- filteredData()
-    total_mercado <- sum(filtered$Valor_FOB_dolares_de_la_mercancia, na.rm = TRUE) %>% 
-      scales::dollar_format()
+    total_mercado <- sum(filtered$Valor_FOB_dolares_de_la_mercancia, na.rm = TRUE)
     
     valueBox(
       "Tamaño de Mercado",
