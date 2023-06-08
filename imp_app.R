@@ -99,7 +99,10 @@ ui <- dashboardPage(
       tabItem(
         tabName = "datos_de_mercado",
         fluidRow(
-          valueBoxOutput('valuebox_total_mercado')
+          valueBoxOutput('valuebox_total_mercado', width = 3),
+          valueBoxOutput('valuebox_prom_cif_usd', width = 3),
+          valueBoxOutput('valuebox_prom_peso_neto', width = 3),
+          valueBoxOutput('valuebox_top_unit', width = 3)
         ),
         
         fluidRow(
@@ -174,6 +177,47 @@ server <- function(input, output) {
       total_mercado,
       color = "green",
       icon = icon("globe")
+    )
+  })
+  
+  output$valuebox_prom_cif_usd <- renderValueBox({
+    filtered <- filteredData()
+    prom_cif_usd <- filtered %>% 
+      group_by(Posicion_arancelaria) %>% 
+      summarize(promedio_cif_usd = mean(Valor_CIF_dolares_de_la_mercancia, na.rm = TRUE))
+
+    valueBox(
+      "Valor CIF Promedio",
+      prom_cif_usd,
+      color = "purple",
+      icon = icon("gauge-simple")
+    )
+  })
+  
+  output$valuebox_prom_peso_neto <- renderValueBox({
+    filtered <- filteredData()
+    prom_peso_neto <- filtered %>% 
+      group_by(Posicion_arancelaria) %>% 
+      dplyr::summarise(peso_promedio = mean(Peso_neto_en_kilos, na.rm = TRUE))
+      
+    valueBox(
+      "Peso Promedio",
+      prom_peso_neto,
+      color = "blue",
+      icon = icon("scale-balanced")
+    )
+  })
+  
+  output$valuebox_top_unit <- renderValueBox({
+    filtered <- filteredData()
+    top_unit <- filtered %>% 
+      mutate(top_unidad= top_n(Codigo_de_unidad, n = 1))
+    
+    valueBox(
+      "Unidad TOP",
+      top_unit,
+      color = "orange",
+      icon = icon("ruler")
     )
   })
   
