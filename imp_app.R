@@ -93,7 +93,7 @@ ui <- dashboardPage(
     tabItems(
       tabItem(
         tabName = "codigo_arancel",
-        dataTableOutput("filteredData"),
+        dataTableOutput("filteredData", width = '100%'),
         downloadButton("exportButton", "Export Table")
       ),
       tabItem(
@@ -161,9 +161,9 @@ server <- function(input, output) {
   
   # Define the top_destino function
   
-  output$filteredData <- renderDataTable({
+  output$filteredData <- DT::renderDataTable({
     filteredData()
-  })
+  }, options = list(scrollX = TRUE))
   
   output$valuebox_total_mercado <- renderValueBox({
     filtered <- filteredData()
