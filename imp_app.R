@@ -226,7 +226,7 @@ server <- function(input, output) {
       
       # Iterate over the joined data and add polygons with conditional coloring
       for (i in 1:nrow(joined_data)) {
-        color <- ifelse(is.na(joined_data$n[i]), "gray", colorNumeric(palette = "Blues", domain = c(0, max_value))(joined_data$n[i]))
+        color <- ifelse(is.na(joined_data$n[i]), "blue", colorNumeric(palette = "Blues", domain = c(0, max_value))(joined_data$n[i]))
         mapa <- mapa %>% addPolygons(data = joined_data[i, ], color = color, weight = 1)
       }
     }
