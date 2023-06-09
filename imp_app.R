@@ -196,13 +196,12 @@ server <- function(input, output) {
   
   output$valuebox_prom_peso_neto <- renderValueBox({
     filtered <- filteredData()
-    prom_peso_neto <- filtered %>% 
-      group_by(Posicion_arancelaria) %>% 
-      summarize(peso_promedio = mean(Peso_neto_en_kilos, na.rm = TRUE))
+    prom_peso_neto <- mean(filtered$Peso_neto_en_kilos, na.rm = TRUE)
+    prom_peso_neto <- round(prom_peso_neto, 2)  # Round to 2 decimal places
       
     valueBox(
       "Peso Promedio",
-      prom_peso_neto$peso_promedio,
+      prom_peso_neto,
       color = "blue",
       icon = icon("scale-balanced")
     )
