@@ -9,8 +9,9 @@ library(leaflet.extras)
 library(rworldxtra)
 library(raster)
 library(sf)
+library(scales)
 
-imports <- read.csv("C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/5year_imports2.csv", nrows = 1000000)
+imports <- read.csv("C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/5year_imports2.csv", nrows = 100000)
 depar <- st_read("C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/MGN2022_DPTO_POLITICO/MGN_DPTO_POLITICO.shp")
 
 imports$Fecha_de_proceso <- as.Date(imports$Fecha_de_proceso)
@@ -170,6 +171,7 @@ server <- function(input, output) {
   output$valuebox_total_mercado <- renderValueBox({
     filtered <- filteredData()
     total_mercado <- sum(filtered$Valor_FOB_dolares_de_la_mercancia, na.rm = TRUE)
+    total_mercado <- dollar_format(prefix = "$", suffix = "", digits = 2)(total_mercado)  # Format with "$" symbol and 2 decimal places
     
     valueBox(
       "Tamaño de Mercado",
@@ -181,8 +183,8 @@ server <- function(input, output) {
   
   output$valuebox_prom_cif_usd <- renderValueBox({
     filtered <- filteredData()
-    prom_cif_usd <- filtered %>% 
-      summarize(promedio_cif_usd = mean(Valor_FOB_dolares_de_la_mercancia, na.rm = TRUE))
+    prom_cif_usd <- mean(filtered$Valor_FOB_dolares_de_la_mercancia, na.rm = TRUE)
+    prom_cif_usd <- dollar_format(prefix = "$", suffix = "", digits = 2)(prom_cif_usd)
 
     valueBox(
       "Valor CIF Promedio",
@@ -229,11 +231,19 @@ server <- function(input, output) {
       top_n(5) %>% 
       arrange(desc(n))
     
-    datatable(top_5_frec, options = list(paging = FALSE))
+    kable(top_5_frec, "html") %>% 
+      kable_styling()
+    
+    top_5_frec
+    
   })
   
   output$top_3_dep_dest <- renderDataTable({
     top_destino_data <- top_destino()
+    
+    kable(top_destino_data, "html") %>% 
+      kable_styling()
+    
     top_destino_data
   })
   
