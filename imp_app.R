@@ -174,10 +174,11 @@ server <- function(input, output) {
     total_mercado <- dollar_format(prefix = "$", suffix = "", digits = 2)(total_mercado)  # Format with "$" symbol and 2 decimal places
     
     valueBox(
-      "Tamaño de Mercado",
-      total_mercado,
+      value = total_mercado,
+      subtitle = "Tamaño de Mercado en usd $",
       color = "green",
       icon = icon("globe")
+      
     )
   })
   
@@ -187,8 +188,8 @@ server <- function(input, output) {
     prom_cif_usd <- dollar_format(prefix = "$", suffix = "", digits = 2)(prom_cif_usd)
 
     valueBox(
-      "Valor CIF Promedio",
-      prom_cif_usd,
+      subtitle = "Valor CIF Promedio en usd $",
+      value = prom_cif_usd,
       color = "purple",
       icon = icon("money-bill")
     )
@@ -200,8 +201,8 @@ server <- function(input, output) {
     prom_peso_neto <- round(prom_peso_neto, 2)  # Round to 2 decimal places
       
     valueBox(
-      "Peso Promedio",
-      prom_peso_neto,
+      subtitle = "Promedio unidad de mediadb (kg/L/unidad)",
+      value = prom_peso_neto,
       color = "blue",
       icon = icon("scale-balanced")
     )
