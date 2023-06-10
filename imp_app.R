@@ -127,13 +127,16 @@ ui <- dashboardPage(
           )
         ),
         fluidRow(
-          box(plotOutput("top_pais_origen")
+          box(plotOutput("top_pais_origen"),
+              width = 4
               ),
           box(
-            plotOutput("top_pais_procedencia")
+            plotOutput("top_pais_procedencia"),
+            width = 4
           ),
           box(
-            plotOutput("top_pais_compra")
+            plotOutput("top_pais_compra"),
+            width = 4
           )
         )
       ),
@@ -294,7 +297,8 @@ server <- function(input, output) {
     
     
     gg_top_pais_origen <- ggplot(data = top_pais_origen, mapping = aes(x=Pais_de_origen, y=n)) +
-      geom_col(aes(fill = Pais_de_origen))
+      geom_col(aes(fill = Pais_de_origen), show.legend = FALSE) +
+      labs( title = "Pais de Origen", x = "Pais", y = "Frecuencia") 
     
     gg_top_pais_origen
   })
@@ -308,7 +312,8 @@ server <- function(input, output) {
       top_n(3) 
     
     top_pais_procedencia <- ggplot(data = top_pais_procedencia, mapping = aes(x=Pais_de_procedencia, y=n)) +
-      geom_col(aes(fill = Pais_de_procedencia))
+      geom_col(aes(fill = Pais_de_procedencia), show.legend = FALSE) +
+      labs( title = "Pais de Procedencia", x = "Pais", y = "Frecuencia")
     
     top_pais_procedencia
   })
@@ -322,7 +327,8 @@ server <- function(input, output) {
       top_n(3) 
     
     top_pais_compra <- ggplot(data = top_pais_compra, mapping = aes(x=Pais_de_compra, y=n)) +
-      geom_col(aes(fill = Pais_de_compra))
+      geom_col(aes(fill = Pais_de_compra,), show.legend = FALSE) +
+      labs( title = "Pais de Compra", x = "Pais", y = "Frecuencia")
     
     top_pais_compra
   })
