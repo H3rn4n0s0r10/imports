@@ -11,7 +11,7 @@ library(raster)
 library(sf)
 library(scales)
 
-imports <- read.csv("C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/5year_imports2.csv", nrows = 100000)
+imports <- read.csv("C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/5year_imports2.csv", nrows = 500000)
 depar <- st_read("C:/Users/hosorio/OneDrive - U.S. Tsubaki Holdings, Inc/Desktop/My Documents/Personal/R/Imports/MGN2022_DPTO_POLITICO/MGN_DPTO_POLITICO.shp")
 
 imports$Fecha_de_proceso <- as.Date(imports$Fecha_de_proceso)
@@ -125,6 +125,16 @@ ui <- dashboardPage(
             title = "Mapa Colombia",
             leafletOutput('mapa')
           )
+        ),
+        fluidRow(
+          box(plotOutput("top_pais_origen")
+              ),
+          box(
+            plotOutput("top_pais_procedencia")
+          ),
+          box(
+            plotOutput("top_pais_compra")
+          )
         )
       ),
       tabItem(tabName = "numero_identifica_tri"),
@@ -228,8 +238,8 @@ server <- function(input, output) {
     filtered <- filteredData()
     top_5_frec <- filtered %>% 
       count(Razon_social_del_importador) %>% 
-      top_n(5) %>% 
-      arrange(desc(n))
+      arrange(desc(n)) %>% 
+      top_n(5)
     
     kable(top_5_frec, "html") %>% 
       kable_styling()
@@ -272,6 +282,49 @@ server <- function(input, output) {
     }
     
     mapa
+  })
+  
+  output$top_pais_origen <- renderPlot({
+    filtered <- filteredData()
+    top_pais_origen <- filtered %>% 
+      count(Pais_de_origen) %>% 
+      drop_na(Pais_de_origen) %>% 
+      arrange(desc(n)) %>% 
+      top_n(3) 
+    
+    
+    gg_top_pais_origen <- ggplot(data = top_pais_origen, mapping = aes(x=Pais_de_origen, y=n)) +
+      geom_col(aes(fill = Pais_de_origen))
+    
+    gg_top_pais_origen
+  })
+  
+  output$top_pais_procedencia <- renderPlot({
+    filtered <- filteredData()
+    top_pais_procedencia <- filtered %>% 
+      count(Pais_de_procedencia) %>% 
+      drop_na(Pais_de_procedencia) %>% 
+      arrange(desc(n)) %>% 
+      top_n(3) 
+    
+    top_pais_procedencia <- ggplot(data = top_pais_procedencia, mapping = aes(x=Pais_de_procedencia, y=n)) +
+      geom_col(aes(fill = Pais_de_procedencia))
+    
+    top_pais_procedencia
+  })
+  
+  output$top_pais_compra <- renderPlot({
+    filtered <- filteredData()
+    top_pais_compra <- filtered %>% 
+      count(Pais_de_compra) %>% 
+      drop_na(Pais_de_compra) %>% 
+      arrange(desc(n)) %>% 
+      top_n(3) 
+    
+    top_pais_compra <- ggplot(data = top_pais_compra, mapping = aes(x=Pais_de_compra, y=n)) +
+      geom_col(aes(fill = Pais_de_compra))
+    
+    top_pais_compra
   })
   
   output$exportButton <- downloadHandler(
